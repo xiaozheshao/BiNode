@@ -563,6 +563,22 @@ class EncoderSlice {
             getAllSymbolicRecords().add(evBest);
             _symbolicDecisions.getBestNeighborPerProtocol().put(router, proto, evBest);
           }
+          // xshao +++
+          // the variable for dbest in BGP protocol. 
+          if (proto.isBgp() ) {
+            String newname =
+                String.format(
+                    "%d_%s%s_%s_%s_%s",
+                    _encoder.getId(), _sliceName, router, proto.name(), "BEST_down", "None");
+            for (int len = 0; len <= BITS; len++) {
+              SymbolicRoute evBest =
+                  new SymbolicRoute(this, newname, router, proto, _optimizations, null, false);
+              getAllSymbolicRecords().add(evBest);
+              _symbolicDecisions.getBestBGPNeighbor().put(router, evBest);
+            }
+          }
+          
+          // xshao ---
         }
       }
     }
@@ -1524,6 +1540,47 @@ class EncoderSlice {
           add(mkEq(somePermitted, bestVars.getPermitted()));
           add(mkImplies(somePermitted, acc));
         }
+        // xshao ++++
+        // add constraints for the down node of BGP protocol.
+        if (proto.isBgp()) {
+          SymbolicRoute dbestVars = _symbolicDecisions.getDBestVars(_optimizations, router);
+          assert (dbestVars != null);
+          BoolExpr dacc = null;
+          BoolExpr dsomePermitted = null;
+
+          for (LogicalEdge e : collectAllImportLogicalEdges(router, conf, proto)) {
+            // dbest only consider eBGP and iBGP to RR
+            boolean todown =
+                (proto.isBgp()) && (getGraph().peerType(e.getEdge() ) != Graph.BgpSendType.TO_NONCLIENT) 
+                && (getGraph().peerType(e.getEdge() ) != Graph.BgpSendType.TO_CLIENT);
+            
+            if (!todown){
+              continue;
+            }
+            
+            SymbolicRoute vars = correctVars(e);
+            
+            
+            if (dsomePermitted == null) {
+              dsomePermitted = vars.getPermitted();
+            } else {
+              dsomePermitted = mkOr(dsomePermitted, vars.getPermitted());
+            }
+
+            BoolExpr v = mkAnd(vars.getPermitted(), equal(conf, proto, dbestVars, vars, e, true));
+            if (dacc == null) {
+              dacc = v;
+            } else {
+              dacc = mkOr(dacc, v);
+            }
+            add(mkImplies(vars.getPermitted(), greaterOrEqual(conf, proto, dbestVars, vars, e)));
+          }
+          if (dacc != null) {
+            add(mkEq(dsomePermitted, dbestVars.getPermitted()));
+            add(mkImplies(dsomePermitted, dacc));
+          }
+        }
+        // xshao ----
       }
     }
   }
@@ -2000,8 +2057,13 @@ class EncoderSlice {
         boolean isClientEdge =
             proto.isBgp() && getGraph().peerType(ge) == Graph.BgpSendType.TO_CLIENT;
 
+        assert (varsOther != null);
+        assert (_optimizations != null);
+        assert (_optimizations.getNeedBgpInternal() != null);
+        
         boolean isInternalExport =
-            varsOther.isBest() && _optimizations.getNeedBgpInternal().contains(router);
+            varsOther.isBest() && 
+            _optimizations.getNeedBgpInternal().contains(router);
         BoolExpr doExport = mkTrue();
         if (isInternalExport && proto.isBgp() && isNonClientEdge) {
           if (isClientEdge) {
@@ -2175,6 +2237,18 @@ class EncoderSlice {
                   }
                 } else {
                   varsOther = _symbolicDecisions.getBestNeighbor().get(router);
+                  
+                  
+                  // xshao ++++
+                  // whether export to iBGP peers (not client). If so, from the dbest variable. 
+                  boolean tononclient =
+                      (proto.isBgp()) && (getGraph().peerType(ge) != Graph.BgpSendType.TO_NONCLIENT);
+                  if (tononclient) {
+                    varsOther = _symbolicDecisions.getBestBGPNeighbor().get(router);
+                  }
+                  // xshao ----
+                  
+                  
                 }
                 Set<Prefix> originations = _originatedNetworks.get(router, proto);
                 assert varsOther != null;

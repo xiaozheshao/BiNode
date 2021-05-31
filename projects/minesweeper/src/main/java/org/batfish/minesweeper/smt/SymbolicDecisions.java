@@ -20,6 +20,11 @@ class SymbolicDecisions {
 
   // control plane: best route for each protocol.
   private Table2<String, Protocol, SymbolicRoute> _bestNeighborPerProtocol;
+  
+  // xshao ++++
+  // control plane: dbest route for BGP protocol.
+  private Map<String, SymbolicRoute> _bestBGPNeighbor;
+  // xshao ----
 
   // control plane: best route over all protocols. The one that will be used
   // to forward.
@@ -42,8 +47,18 @@ class SymbolicDecisions {
     _choiceVariables = new Table3<>();
     _controlForwarding = new Table2<>();
     _dataForwarding = new Table2<>();
+    // xshao ++++
+    _bestBGPNeighbor = new HashMap<>();
+    // xshao ----
   }
 
+  // xshao ++++
+  Map<String, SymbolicRoute> getBestBGPNeighbor(){
+    return _bestBGPNeighbor;
+  }
+  // xshao ----
+  
+  
   Table2<String, Protocol, SymbolicRoute> getBestNeighborPerProtocol() {
     return _bestNeighborPerProtocol;
   }
@@ -72,4 +87,14 @@ class SymbolicDecisions {
       return _bestNeighborPerProtocol.get(router, proto);
     }
   }
+  // xshao ++++
+  // get dBest 
+  SymbolicRoute getDBestVars(Optimizations opts, String router) {
+    if (opts.getSliceHasSingleProtocol().contains(router)) {
+      return _bestNeighbor.get(router);
+    } else {
+      return _bestBGPNeighbor.get(router);
+    }    
+  }
+  // xshao ----
 }
