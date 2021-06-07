@@ -102,7 +102,9 @@ public class HeaderQuestion extends Question {
     _modelOverflow = false;
     _useAbstraction = false;
     _stats = false;
-    _benchmark = false;
+    //xshao change
+    _benchmark = true;
+    //xshao 
     _bgpRanking.add(BgpDecisionVariable.LOCALPREF);
     _bgpRanking.add(BgpDecisionVariable.PATHLEN);
     _bgpRanking.add(BgpDecisionVariable.MED);

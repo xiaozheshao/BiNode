@@ -530,7 +530,9 @@ class EncoderSlice {
    * each protocol as well as for the router as a whole
    */
   private void addBestVariables() {
+    System.out.println("EncoderSlice: addBestVariables. BITS:" + BITS);
     for (Entry<String, List<Protocol>> entry : getProtocols().entrySet()) {
+      System.out.println("entry" + entry.toString());
       String router = entry.getKey();
       List<Protocol> allProtos = entry.getValue();
       // Overall best
@@ -563,24 +565,30 @@ class EncoderSlice {
             getAllSymbolicRecords().add(evBest);
             _symbolicDecisions.getBestNeighborPerProtocol().put(router, proto, evBest);
           }
-          // xshao +++
-          // the variable for dbest in BGP protocol. 
-          if (proto.isBgp() ) {
-            String newname =
-                String.format(
-                    "%d_%s%s_%s_%s_%s",
-                    _encoder.getId(), _sliceName, router, proto.name(), "BEST_down", "None");
-            for (int len = 0; len <= BITS; len++) {
-              SymbolicRoute evBest =
-                  new SymbolicRoute(this, newname, router, proto, _optimizations, null, false);
-              getAllSymbolicRecords().add(evBest);
-              _symbolicDecisions.getBestBGPNeighbor().put(router, evBest);
-            }
-          }
-          
-          // xshao ---
         }
       }
+      
+      // xshao +++
+      // the variable for dbest in BGP protocol. 
+      for (Protocol proto : getProtocols().get(router)) {
+        if (proto.isBgp() ) {
+          String newname =
+              String.format(
+                  "%d_%s%s_%s_%s_%s",
+                  _encoder.getId(), _sliceName, router, proto.name(), "BEST_down", "None");
+          for (int len = 0; len <= BITS; len++) {
+            SymbolicRoute evBest =
+                new SymbolicRoute(this, newname, router, proto, _optimizations, null, false);
+            getAllSymbolicRecords().add(evBest);
+            _symbolicDecisions.getBestBGPNeighbor().put(router, evBest);
+            System.out.println("EncoderSlice: Add evBest for router:" + router + "name:" + newname);
+          }
+        }
+      }
+      
+      // xshao ---
+      
+      
     }
   }
 
