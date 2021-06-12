@@ -530,9 +530,9 @@ class EncoderSlice {
    * each protocol as well as for the router as a whole
    */
   private void addBestVariables() {
-    System.out.println("EncoderSlice: addBestVariables. BITS:" + BITS);
+//    System.out.println("EncoderSlice: addBestVariables. BITS:" + BITS);
     for (Entry<String, List<Protocol>> entry : getProtocols().entrySet()) {
-      System.out.println("entry" + entry.toString());
+//      System.out.println("entry" + entry.toString());
       String router = entry.getKey();
       List<Protocol> allProtos = entry.getValue();
       // Overall best
@@ -581,7 +581,7 @@ class EncoderSlice {
                 new SymbolicRoute(this, newname, router, proto, _optimizations, null, false);
             getAllSymbolicRecords().add(evBest);
             _symbolicDecisions.getBestBGPNeighbor().put(router, evBest);
-            System.out.println("EncoderSlice: Add evBest for router:" + router + "name:" + newname);
+//            System.out.println("EncoderSlice: Add evBest for router:" + router + "name:" + newname);
           }
         }
       }
