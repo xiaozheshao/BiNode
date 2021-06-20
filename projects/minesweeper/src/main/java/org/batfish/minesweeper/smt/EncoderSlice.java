@@ -1527,12 +1527,13 @@ class EncoderSlice {
 
         for (LogicalEdge e : collectAllImportLogicalEdges(router, conf, proto)) {
           // xshao ++++
-          // best does not consider eBGP and iBGP to RR
-          boolean todown = proto.isBgp() && (
-              (getGraph().peerType(e.getEdge() ) == Graph.BgpSendType.TO_EBGP) 
-              || (getGraph().peerType(e.getEdge() ) == Graph.BgpSendType.TO_RR));
+          // best does not export to provider
+          Graph g = getGraph();
+          boolean toprovider = proto.isBgp() && 
+              (g.getEbgpNeighbors().get(e.getEdge()).getLocalAs() > 
+              g.getEbgpNeighbors().get(g.getOtherEnd().get(e.getEdge())).getLocalAs()  );
           
-          if (todown && proto.isBgp()){
+          if (toprovider && proto.isBgp()){
             continue;
           }
           // xshao ----
@@ -1587,12 +1588,13 @@ class EncoderSlice {
           BoolExpr dsomePermitted = null;
 
           for (LogicalEdge e : collectAllImportLogicalEdges(router, conf, proto)) {
-            // dbest only consider eBGP and iBGP to RR
-            boolean todown =
-                (getGraph().peerType(e.getEdge() ) == Graph.BgpSendType.TO_EBGP) 
-                || (getGraph().peerType(e.getEdge() ) == Graph.BgpSendType.TO_RR);
+            // dbest only consider variables from customers
+            Graph g = getGraph();
+            boolean tocustomer = proto.isBgp() && 
+                (g.getEbgpNeighbors().get(e.getEdge()).getLocalAs() < 
+                g.getEbgpNeighbors().get(g.getOtherEnd().get(e.getEdge())).getLocalAs()  );
             
-            if (!todown){
+            if (tocustomer && proto.isBgp()){
               continue;
             }
             
@@ -2278,10 +2280,10 @@ class EncoderSlice {
                   
                   
                   // xshao ++++
-                  // whether export to iBGP peers (not client). If so, from the dbest variable. 
-                  boolean tononclient =
-                      (proto.isBgp()) && (getGraph().peerType(ge) != Graph.BgpSendType.TO_CLIENT);
-                  if (tononclient) {
+                  // from dbest to variables of provider (smaller as number) 
+                  boolean toprovider = getGraph().getEbgpNeighbors().get(ge).getLocalAs() > 
+                  getGraph().getEbgpNeighbors().get( getGraph().getOtherEnd().get(ge)).getLocalAs();
+                  if (toprovider) {
                     varsOther = _symbolicDecisions.getBestBGPNeighbor().get(router);
                   }
                   // xshao ----
