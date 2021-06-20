@@ -1526,6 +1526,16 @@ class EncoderSlice {
         BoolExpr somePermitted = null;
 
         for (LogicalEdge e : collectAllImportLogicalEdges(router, conf, proto)) {
+          // xshao ++++
+          // best does not consider eBGP and iBGP to RR
+          boolean todown = proto.isBgp() && (
+              (getGraph().peerType(e.getEdge() ) == Graph.BgpSendType.TO_EBGP) 
+              || (getGraph().peerType(e.getEdge() ) == Graph.BgpSendType.TO_RR));
+          
+          if (todown && proto.isBgp()){
+            continue;
+          }
+          // xshao ----
 
           SymbolicRoute vars = correctVars(e);
 
@@ -1543,6 +1553,26 @@ class EncoderSlice {
           }
           add(mkImplies(vars.getPermitted(), greaterOrEqual(conf, proto, bestVars, vars, e)));
         }
+        
+        // xshao ++++
+        // make best depends on dbest !!
+        if (proto.isBgp()) {
+          SymbolicRoute dbest = _symbolicDecisions.getDBestVars(_optimizations, router);
+          if (somePermitted == null) {
+            somePermitted = dbest.getPermitted();
+          } else {
+            somePermitted = mkOr(somePermitted, dbest.getPermitted());
+          }
+        
+          BoolExpr v = mkAnd(dbest.getPermitted(), equal(conf, proto, bestVars, dbest, null, true));
+          if (acc == null) {
+            acc = v;
+          } else {
+            acc = mkOr(acc, v);
+          }
+          add(mkImplies(dbest.getPermitted(), greaterOrEqual(conf, proto, bestVars, dbest, null)));
+        }
+        // xshao ----
 
         if (acc != null) {
           add(mkEq(somePermitted, bestVars.getPermitted()));
@@ -1559,8 +1589,8 @@ class EncoderSlice {
           for (LogicalEdge e : collectAllImportLogicalEdges(router, conf, proto)) {
             // dbest only consider eBGP and iBGP to RR
             boolean todown =
-                (proto.isBgp()) && (getGraph().peerType(e.getEdge() ) != Graph.BgpSendType.TO_NONCLIENT) 
-                && (getGraph().peerType(e.getEdge() ) != Graph.BgpSendType.TO_CLIENT);
+                (getGraph().peerType(e.getEdge() ) == Graph.BgpSendType.TO_EBGP) 
+                || (getGraph().peerType(e.getEdge() ) == Graph.BgpSendType.TO_RR);
             
             if (!todown){
               continue;
@@ -1575,11 +1605,11 @@ class EncoderSlice {
               dsomePermitted = mkOr(dsomePermitted, vars.getPermitted());
             }
 
-            BoolExpr v = mkAnd(vars.getPermitted(), equal(conf, proto, dbestVars, vars, e, true));
+            BoolExpr dv = mkAnd(vars.getPermitted(), equal(conf, proto, dbestVars, vars, e, true));
             if (dacc == null) {
-              dacc = v;
+              dacc = dv;
             } else {
-              dacc = mkOr(dacc, v);
+              dacc = mkOr(dacc, dv);
             }
             add(mkImplies(vars.getPermitted(), greaterOrEqual(conf, proto, dbestVars, vars, e)));
           }
@@ -2250,7 +2280,7 @@ class EncoderSlice {
                   // xshao ++++
                   // whether export to iBGP peers (not client). If so, from the dbest variable. 
                   boolean tononclient =
-                      (proto.isBgp()) && (getGraph().peerType(ge) != Graph.BgpSendType.TO_NONCLIENT);
+                      (proto.isBgp()) && (getGraph().peerType(ge) != Graph.BgpSendType.TO_CLIENT);
                   if (tononclient) {
                     varsOther = _symbolicDecisions.getBestBGPNeighbor().get(router);
                   }
