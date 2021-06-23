@@ -89,12 +89,9 @@ class SymbolicDecisions {
   }
   // xshao ++++
   // get dBest 
+  // Even there is only a single protocol, we need dbest. 
   SymbolicRoute getDBestVars(Optimizations opts, String router) {
-    if (opts.getSliceHasSingleProtocol().contains(router)) {
-      return _bestNeighbor.get(router);
-    } else {
-      return _bestBGPNeighbor.get(router);
-    }    
+     return _bestBGPNeighbor.get(router);    
   }
   // xshao ----
 }

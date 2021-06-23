@@ -148,6 +148,7 @@ public class Encoder {
       if (ENABLE_UNSAT_CORE) {
         _solver = _ctx.mkSolver();
       } else {
+        // xshao change for testing
         Tactic t1 = _ctx.mkTactic("simplify");
         Tactic t2 = _ctx.mkTactic("propagate-values");
         Tactic t3 = _ctx.mkTactic("solve-eqs");
@@ -155,6 +156,7 @@ public class Encoder {
         Tactic t5 = _ctx.mkTactic("smt");
         Tactic t = _ctx.then(t1, t2, t3, t4, t5);
         _solver = _ctx.mkSolver(t);
+//        _solver = _ctx.mkSolver();
         // System.out.println("Help: \n" + _solver.getHelp());
       }
     } else {

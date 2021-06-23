@@ -565,30 +565,46 @@ class EncoderSlice {
             getAllSymbolicRecords().add(evBest);
             _symbolicDecisions.getBestNeighborPerProtocol().put(router, proto, evBest);
           }
+          
+          // xshao +++
+          // the variable for dbest in BGP protocol. 
+          // if there are multiple protocols
+           if (proto.isBgp() ) {
+             String newname =
+                 String.format(
+                     "%d_%s%s_%s_%s_%s",
+                     _encoder.getId(), _sliceName, router, proto.name(), "BEST_down", "None");
+             for (int len = 0; len <= BITS; len++) {
+               SymbolicRoute evBest =
+                   new SymbolicRoute(this, newname, router, proto, _optimizations, null, false);
+               getAllSymbolicRecords().add(evBest);
+               _symbolicDecisions.getBestBGPNeighbor().put(router, evBest);
+//               System.out.println("EncoderSlice: Add evBest for router:" + router + "name:" + newname);
+             }
+           }
+          
+          // xshao ---
+          
         }
-      }
-      
-      // xshao +++
-      // the variable for dbest in BGP protocol. 
-      for (Protocol proto : getProtocols().get(router)) {
-        if (proto.isBgp() ) {
+        
+      }else if (isMainSlice())  {
+        // xshao ++++
+        // if there is only one protocol, BGP, for this router and it's main slice.
+        if (getProtocols().get(router).contains(Protocol.BGP)){
           String newname =
               String.format(
                   "%d_%s%s_%s_%s_%s",
-                  _encoder.getId(), _sliceName, router, proto.name(), "BEST_down", "None");
+                  _encoder.getId(), _sliceName, router, Protocol.BGP.toString(), "BEST_down", "None");
           for (int len = 0; len <= BITS; len++) {
             SymbolicRoute evBest =
-                new SymbolicRoute(this, newname, router, proto, _optimizations, null, false);
+                new SymbolicRoute(this, newname, router, Protocol.BGP, _optimizations, null, false);
             getAllSymbolicRecords().add(evBest);
-            _symbolicDecisions.getBestBGPNeighbor().put(router, evBest);
-//            System.out.println("EncoderSlice: Add evBest for router:" + router + "name:" + newname);
+            _symbolicDecisions.getBestBGPNeighbor().put(router, evBest);   
           }
         }
+        // xshao ----
       }
-      
-      // xshao ---
-      
-      
+     
     }
   }
 
@@ -1587,7 +1603,7 @@ class EncoderSlice {
           BoolExpr dsomePermitted = null;
 
           for (LogicalEdge e : collectAllImportLogicalEdges(router, conf, proto)) {
-            // dbest only consider eBGP and iBGP to RR
+            // dbest only consider routes from eBGP and client iBGP to RR
             boolean todown =
                 (getGraph().peerType(e.getEdge() ) == Graph.BgpSendType.TO_EBGP) 
                 || (getGraph().peerType(e.getEdge() ) == Graph.BgpSendType.TO_RR);
