@@ -724,7 +724,8 @@ class TransferSSA {
       String peer = _graphEdge.getPeer();
 
       // Case where it is a non client, we lookup the next-hop
-      if (isNonClient) {
+      // xshao change: consider whether modeling IGP
+      if (isNonClient && _enc.getEncoder().getModelIgp()) {
         EncoderSlice s = _enc.getEncoder().getSlice(peer);
         SymbolicRoute r = s.getSymbolicDecisions().getBestNeighbor().get(router);
         igpMet = _enc.mkEq(_current.getIgpMetric(), r.getMetric());

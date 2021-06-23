@@ -1817,30 +1817,42 @@ class EncoderSlice {
                 SymbolicRoute record = getSymbolicDecisions().getBestNeighbor().get(router);
                 // adjust for iBGP in main slice
                 BoolExpr acc = mkFalse();
-                if (isMainSlice()) {
-                  for (Entry<String, Integer> entry2 : getGraph().getOriginatorId().entrySet()) {
-                    String r = entry2.getKey();
-                    Integer id = entry2.getValue();
-                    EncoderSlice s = _encoder.getSlice(r);
-                    // Make sure
-                    if (otherSliceHasEdge(s, router, ge)) {
-                      BoolExpr outEdge =
-                          s.getSymbolicDecisions().getDataForwarding().get(router, ge);
-                      acc = mkOr(acc, mkAnd(record.getClientId().checkIfValue(id), outEdge));
+                // xshao consider whether model IGP
+                if (_encoder.getModelIgp()) {
+                  if (isMainSlice()) {
+                    for (Entry<String, Integer> entry2 : getGraph().getOriginatorId().entrySet()) {
+                      String r = entry2.getKey();
+                      Integer id = entry2.getValue();
+                      EncoderSlice s = _encoder.getSlice(r);
+                      // Make sure
+                      if (otherSliceHasEdge(s, router, ge)) {
+                        BoolExpr outEdge =
+                            s.getSymbolicDecisions().getDataForwarding().get(router, ge);
+                        acc = mkOr(acc, mkAnd(record.getClientId().checkIfValue(id), outEdge));
+                      }
                     }
                   }
+                }else {
+                  // xshao without modeling IGP, assume the reachability
+                  acc = mkTrue();
                 }
                 fwd = mkOr(fwd, mkAnd(ctrlFwd, acc));
 
               } else {
                 // Otherwise, we know the next hop statically
                 // adjust for iBGP in main slice
-                if (isMainSlice()) {
-                  EncoderSlice s = _encoder.getSlice(ge2.getPeer());
-                  if (otherSliceHasEdge(s, router, ge)) {
-                    BoolExpr outEdge = s.getSymbolicDecisions().getDataForwarding().get(router, ge);
-                    fwd = mkOr(fwd, mkAnd(ctrlFwd, outEdge));
+                // xshao consider whether model IGP
+                if (_encoder.getModelIgp()) {
+                  if (isMainSlice()) {
+                    EncoderSlice s = _encoder.getSlice(ge2.getPeer());
+                    if (otherSliceHasEdge(s, router, ge)) {
+                      BoolExpr outEdge = s.getSymbolicDecisions().getDataForwarding().get(router, ge);
+                      fwd = mkOr(fwd, mkAnd(ctrlFwd, outEdge));
+                    }
                   }
+                }else {
+                  // xshao without modeling IGP, assume the reachability
+                  fwd = mkTrue();
                 }
               }
             }

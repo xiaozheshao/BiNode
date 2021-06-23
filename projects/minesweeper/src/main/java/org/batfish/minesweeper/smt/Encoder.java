@@ -128,7 +128,7 @@ public class Encoder {
       int id) {
     _graph = graph;
     _previousEncoder = enc;
-    _modelIgp = true;
+    _modelIgp = false;
     _encodingId = id;
     _question = q;
     _slices = new HashMap<>();
