@@ -1809,7 +1809,8 @@ class EncoderSlice {
           // if that edge is on and its neighbor slices has next hop forwarding
           // out the current edge ge, the we use ge.
           for (GraphEdge ge2 : getGraph().getEdgeMap().get(router)) {
-            if (ge2.isAbstract()) {
+            // xshao consider whether model IGP
+            if (ge2.isAbstract() && _encoder.getModelIgp()) {
               BoolExpr ctrlFwd = getSymbolicDecisions().getControlForwarding().get(router, ge2);
               Graph.BgpSendType st = getGraph().peerType(ge2);
               // If Route reflectors, then next hop based on ID
@@ -1817,8 +1818,6 @@ class EncoderSlice {
                 SymbolicRoute record = getSymbolicDecisions().getBestNeighbor().get(router);
                 // adjust for iBGP in main slice
                 BoolExpr acc = mkFalse();
-                // xshao consider whether model IGP
-                if (_encoder.getModelIgp()) {
                   if (isMainSlice()) {
                     for (Entry<String, Integer> entry2 : getGraph().getOriginatorId().entrySet()) {
                       String r = entry2.getKey();
@@ -1832,28 +1831,9 @@ class EncoderSlice {
                       }
                     }
                   }
-                }else {
-                  // xshao without modeling IGP, assume the reachability
-                  acc = mkTrue();
-                }
+                
                 fwd = mkOr(fwd, mkAnd(ctrlFwd, acc));
 
-              } else {
-                // Otherwise, we know the next hop statically
-                // adjust for iBGP in main slice
-                // xshao consider whether model IGP
-                if (_encoder.getModelIgp()) {
-                  if (isMainSlice()) {
-                    EncoderSlice s = _encoder.getSlice(ge2.getPeer());
-                    if (otherSliceHasEdge(s, router, ge)) {
-                      BoolExpr outEdge = s.getSymbolicDecisions().getDataForwarding().get(router, ge);
-                      fwd = mkOr(fwd, mkAnd(ctrlFwd, outEdge));
-                    }
-                  }
-                }else {
-                  // xshao without modeling IGP, assume the reachability
-                  fwd = mkTrue();
-                }
               }
             }
           }
