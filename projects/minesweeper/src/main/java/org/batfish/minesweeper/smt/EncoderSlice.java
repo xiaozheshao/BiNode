@@ -131,7 +131,8 @@ class EncoderSlice {
     initOriginatedPrefixes();
     initRedistributionProtocols();
     initVariables();
-    initAclFunctions();
+    // xshao simplify
+    //    initAclFunctions();
     initForwardingAcross();
   }
 
@@ -717,8 +718,9 @@ class EncoderSlice {
                       .get(proto)
                       .contains(e);
 */
-              // xshao simplify
+              // xshao
               boolean notNeeded = false;
+              
               Interface i = e.getStart();
               Prefix p = i.getConcreteAddress().getPrefix();
 
@@ -1546,16 +1548,6 @@ class EncoderSlice {
         BoolExpr somePermitted = null;
 
         for (LogicalEdge e : collectAllImportLogicalEdges(router, conf, proto)) {
-          // xshao ++++
-          // best does not consider eBGP and iBGP to RR
-          boolean todown = proto.isBgp() && (
-              (getGraph().peerType(e.getEdge() ) == Graph.BgpSendType.TO_EBGP) 
-              || (getGraph().peerType(e.getEdge() ) == Graph.BgpSendType.TO_RR));
-          
-          if (todown && proto.isBgp()){
-            continue;
-          }
-          // xshao ----
 
           SymbolicRoute vars = correctVars(e);
 
@@ -1573,26 +1565,6 @@ class EncoderSlice {
           }
           add(mkImplies(vars.getPermitted(), greaterOrEqual(conf, proto, bestVars, vars, e)));
         }
-        
-        // xshao ++++
-        // make best depends on dbest !!
-        if (proto.isBgp()) {
-          SymbolicRoute dbest = _symbolicDecisions.getDBestVars(_optimizations, router);
-          if (somePermitted == null) {
-            somePermitted = dbest.getPermitted();
-          } else {
-            somePermitted = mkOr(somePermitted, dbest.getPermitted());
-          }
-        
-          BoolExpr v = mkAnd(dbest.getPermitted(), equal(conf, proto, bestVars, dbest, null, true));
-          if (acc == null) {
-            acc = v;
-          } else {
-            acc = mkOr(acc, v);
-          }
-          add(mkImplies(dbest.getPermitted(), greaterOrEqual(conf, proto, bestVars, dbest, null)));
-        }
-        // xshao ----
 
         if (acc != null) {
           add(mkEq(somePermitted, bestVars.getPermitted()));
