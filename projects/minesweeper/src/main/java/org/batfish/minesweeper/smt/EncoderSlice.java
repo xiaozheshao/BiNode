@@ -642,6 +642,8 @@ class EncoderSlice {
 
         Boolean useSingleExport =
             _optimizations.getSliceCanKeepSingleExportVar().get(router, proto);
+        // xshao simplify
+        useSingleExport = false;
         assert (useSingleExport != null);
 
         Map<GraphEdge, ArrayList<LogicalEdge>> importGraphEdgeMap = new HashMap<>();
@@ -707,14 +709,16 @@ class EncoderSlice {
                   getAllSymbolicRecords().add(ev1);
                 }
               }
-
+/*
               boolean notNeeded =
                   _optimizations
                       .getSliceCanCombineImportExportVars()
                       .get(router)
                       .get(proto)
                       .contains(e);
-
+*/
+              // xshao simplify
+              boolean notNeeded = false;
               Interface i = e.getStart();
               Prefix p = i.getConcreteAddress().getPrefix();
 
@@ -2074,8 +2078,9 @@ class EncoderSlice {
             .orElse(mkTrue());
 
     // only add constraints once when using a single copy of export variables
-    if (!_optimizations.getSliceCanKeepSingleExportVar().get(router).get(proto) || !usedExport) {
-
+//    if (!_optimizations.getSliceCanKeepSingleExportVar().get(router).get(proto) || !usedExport) {
+    // xshao simplify
+    if (true) {
       if (proto.isConnected()) {
         BoolExpr val = mkNot(vars.getPermitted());
         add(val);
@@ -2436,7 +2441,8 @@ class EncoderSlice {
    */
   void computeEncoding() {
     addBoundConstraints();
-    addCommunityConstraints();
+    // xshao simplify
+//    addCommunityConstraints();
     addTransferFunction();
     addHistoryConstraints();
     addBestPerProtocolConstraints();

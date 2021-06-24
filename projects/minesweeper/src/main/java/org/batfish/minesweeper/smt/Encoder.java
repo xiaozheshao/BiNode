@@ -823,8 +823,9 @@ public class Encoder {
       throw new BatfishException(
           "Cannot encode a network that has a static route with a dynamic next hop");
     }
-    addFailedLinkConstraints(_question.getFailures());
-    addFailedNodeConstraints(_question.getNodeFailures());
+    // xshao simplify
+    //    addFailedLinkConstraints(_question.getFailures());
+//    addFailedNodeConstraints(_question.getNodeFailures());
     getMainSlice().computeEncoding();
     for (Entry<String, EncoderSlice> entry : _slices.entrySet()) {
       String name = entry.getKey();
