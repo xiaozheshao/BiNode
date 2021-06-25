@@ -747,7 +747,13 @@ public class Encoder {
 
     long start = System.currentTimeMillis();
     Status status = _solver.check();
+    // xshao 5x
+    _solver.check();
+    _solver.check();
+    _solver.check();
+    _solver.check();
     long time = System.currentTimeMillis() - start;
+    time = time / 5;
 
     VerificationStats stats = null;
     if (_question.getBenchmark()) {
