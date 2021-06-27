@@ -1527,7 +1527,7 @@ class EncoderSlice {
 
         for (LogicalEdge e : collectAllImportLogicalEdges(router, conf, proto)) {
           // xshao debug
-          System.out.println("Router:" + router +" receives " + proto + " edge:" + e.getEdge());
+//          System.out.println("Router:" + router +" receives " + proto + " edge:" + e.getEdge());
           SymbolicRoute vars = correctVars(e);
 
           if (somePermitted == null) {
@@ -1561,7 +1561,7 @@ class EncoderSlice {
             // dbest only consider variables from customers
             Graph g = getGraph();
             // xshao debug
-            System.out.println("Potential!! For Dbest, Router:" + router +" receives " + proto + " edge:" + e.getEdge());
+//            System.out.println("Potential!! For Dbest, Router:" + router +" receives " + proto + " edge:" + e.getEdge());
 
             
             boolean tocustomer =  (g.getOtherEnd().get(e.getEdge()) == null) ||
@@ -1572,7 +1572,7 @@ class EncoderSlice {
               continue;
             }
             // xshao debug
-            System.out.println("For Dbest, Router:" + router +" receives " + proto + " edge:" + e.getEdge());
+//            System.out.println("For Dbest, Router:" + router +" receives " + proto + " edge:" + e.getEdge());
             
             SymbolicRoute vars = correctVars(e);
             
@@ -1880,8 +1880,8 @@ class EncoderSlice {
       if (proto.isConnected()) {
         Prefix p = iface.getConcreteAddress().getPrefix();
         // xshao debug
-        System.out.println("for import of connected protocol:" + p.toString() + 
-            " at graph edge:" + ge + "|router:"+ router);
+//        System.out.println("for import of connected protocol:" + p.toString() + 
+//            " at graph edge:" + ge + "|router:"+ router);
         BoolExpr relevant =
             mkAnd(
                 interfaceActive(iface, proto),
@@ -2090,7 +2090,7 @@ class EncoderSlice {
       }
 
       if (proto.isOspf() || proto.isBgp()) {
-        System.out.println("+++++++++++ get export constraints for " +  e);
+//        System.out.println("+++++++++++ get export constraints for " +  e);
 
         // BGP cost based on export
         int cost = proto.isBgp() ? addedCost(proto, ge) : 0;
@@ -2185,7 +2185,7 @@ class EncoderSlice {
           acc = mkIf(usesOspf, mkIf(usable, acc, val), mkIf(usable2, mkAnd(eq, eqPer), val));
           
           // xshao debug
-          System.out.println("!!!!!!!!!!!!!!!!1 ospfRedicstribVars is not None!!");
+//          System.out.println("!!!!!!!!!!!!!!!!1 ospfRedicstribVars is not None!!");
         } else {
           acc = mkIf(usable, acc, val);
         }
@@ -2255,7 +2255,7 @@ class EncoderSlice {
       Configuration conf = entry.getValue();
       for (Protocol proto : getProtocols().get(router)) {
         // xshao debug
-        System.out.println("--------------------start proto:" + proto);
+//        System.out.println("--------------------start proto:" + proto);
         boolean usedExport = false;
         boolean hasEdge = false;
 
@@ -2267,7 +2267,7 @@ class EncoderSlice {
             GraphEdge ge = e.getEdge();
             
             // xshao debug
-            System.out.println("Go through logic edge:" + e + " with type " + e.getEdgeType() +" graph edge:" + ge);
+//            System.out.println("Go through logic edge:" + e + " with type " + e.getEdgeType() +" graph edge:" + ge);
 
             if (!getGraph().isEdgeUsed(conf, proto, ge)) {
               continue;
@@ -2295,20 +2295,20 @@ class EncoderSlice {
                     overallBest = _symbolicDecisions.getBestNeighbor().get(router);
                   }
                   // xshao debug
-                  System.out.println("OSPF----For router:" + router + "|Export at graph edge:" + ge + ". with "+ varsOther);
+//                  System.out.println("OSPF----For router:" + router + "|Export at graph edge:" + ge + ". with "+ varsOther);
 
                 } else {
                   varsOther = _symbolicDecisions.getBestNeighbor().get(router);
                   
                   
                   // xshao ++++
-                  System.out.println("For router:" + router + "|Export at graph edge:" + ge + ". with "+ varsOther);
+//                  System.out.println("For router:" + router + "|Export at graph edge:" + ge + ". with "+ varsOther);
                                     // from dbest to variables of provider (smaller as number) 
                   boolean toprovider = getGraph().getEbgpNeighbors().get(ge).getLocalAs() > 
                   getGraph().getEbgpNeighbors().get( getGraph().getOtherEnd().get(ge)).getLocalAs();
                   if (toprovider) {
                     varsOther = _symbolicDecisions.getBestBGPNeighbor().get(router);
-                    System.out.println("Use dbest!");
+//                    System.out.println("Use dbest!");
                   }
                   // xshao ----
                   
