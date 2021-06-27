@@ -90,11 +90,11 @@ class SymbolicDecisions {
   // xshao ++++
   // get dBest 
   SymbolicRoute getDBestVars(Optimizations opts, String router) {
-    if (opts.getSliceHasSingleProtocol().contains(router)) {
-      return _bestNeighbor.get(router);
-    } else {
+//    if (opts.getSliceHasSingleProtocol().contains(router)) {
+//      return _bestNeighbor.get(router);
+//    } else {
       return _bestBGPNeighbor.get(router);
-    }    
+//    }    
   }
   // xshao ----
 }

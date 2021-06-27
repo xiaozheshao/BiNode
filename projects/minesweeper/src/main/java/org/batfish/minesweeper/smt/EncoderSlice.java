@@ -1518,7 +1518,7 @@ class EncoderSlice {
       Configuration conf = entry.getValue();
 
       for (Protocol proto : getProtocols().get(router)) {
-
+        
         SymbolicRoute bestVars = _symbolicDecisions.getBestVars(_optimizations, router, proto);
         assert (bestVars != null);
 
@@ -1526,18 +1526,8 @@ class EncoderSlice {
         BoolExpr somePermitted = null;
 
         for (LogicalEdge e : collectAllImportLogicalEdges(router, conf, proto)) {
-          // xshao ++++
-          // best does not export to provider
-          Graph g = getGraph();
-          boolean toprovider = proto.isBgp() && 
-              (g.getEbgpNeighbors().get(e.getEdge()).getLocalAs() > 
-              g.getEbgpNeighbors().get(g.getOtherEnd().get(e.getEdge())).getLocalAs()  );
-          
-          if (toprovider && proto.isBgp()){
-            continue;
-          }
-          // xshao ----
-
+          // xshao debug
+          System.out.println("Router:" + router +" receives " + proto + " edge:" + e.getEdge());
           SymbolicRoute vars = correctVars(e);
 
           if (somePermitted == null) {
@@ -1554,26 +1544,6 @@ class EncoderSlice {
           }
           add(mkImplies(vars.getPermitted(), greaterOrEqual(conf, proto, bestVars, vars, e)));
         }
-        
-        // xshao ++++
-        // make best depends on dbest !!
-        if (proto.isBgp()) {
-          SymbolicRoute dbest = _symbolicDecisions.getDBestVars(_optimizations, router);
-          if (somePermitted == null) {
-            somePermitted = dbest.getPermitted();
-          } else {
-            somePermitted = mkOr(somePermitted, dbest.getPermitted());
-          }
-        
-          BoolExpr v = mkAnd(dbest.getPermitted(), equal(conf, proto, bestVars, dbest, null, true));
-          if (acc == null) {
-            acc = v;
-          } else {
-            acc = mkOr(acc, v);
-          }
-          add(mkImplies(dbest.getPermitted(), greaterOrEqual(conf, proto, bestVars, dbest, null)));
-        }
-        // xshao ----
 
         if (acc != null) {
           add(mkEq(somePermitted, bestVars.getPermitted()));
@@ -1590,13 +1560,19 @@ class EncoderSlice {
           for (LogicalEdge e : collectAllImportLogicalEdges(router, conf, proto)) {
             // dbest only consider variables from customers
             Graph g = getGraph();
-            boolean tocustomer = proto.isBgp() && 
+            // xshao debug
+            System.out.println("Potential!! For Dbest, Router:" + router +" receives " + proto + " edge:" + e.getEdge());
+
+            
+            boolean tocustomer =  (g.getOtherEnd().get(e.getEdge()) == null) ||
                 (g.getEbgpNeighbors().get(e.getEdge()).getLocalAs() < 
                 g.getEbgpNeighbors().get(g.getOtherEnd().get(e.getEdge())).getLocalAs()  );
             
-            if (tocustomer && proto.isBgp()){
+            if (!tocustomer){
               continue;
             }
+            // xshao debug
+            System.out.println("For Dbest, Router:" + router +" receives " + proto + " edge:" + e.getEdge());
             
             SymbolicRoute vars = correctVars(e);
             
@@ -1615,6 +1591,36 @@ class EncoderSlice {
             }
             add(mkImplies(vars.getPermitted(), greaterOrEqual(conf, proto, dbestVars, vars, e)));
           }
+          
+          // consider connected network. dbest also depends on the connected network. 
+          for (Protocol proto2 : getProtocols().get(router)) {
+            if (proto2.isConnected()) {
+
+              SymbolicRoute bestVars2 = _symbolicDecisions.getBestVars(_optimizations, router, proto2);
+              assert (bestVars2 != null);
+
+              if (dsomePermitted == null) {
+                dsomePermitted = bestVars2.getPermitted();
+              } else {
+                dsomePermitted = mkOr(dsomePermitted, bestVars2.getPermitted());
+              }
+
+              BoolExpr val =
+                  mkAnd(bestVars2.getPermitted(), equal(conf, proto2, dbestVars, bestVars2, null, true));
+              if (dacc == null) {
+                dacc = val;
+              } else {
+                dacc = mkOr(dacc, val);
+              }
+              add(
+                mkImplies(
+                    bestVars2.getPermitted(), greaterOrEqual(conf, proto2, dbestVars, bestVars2, null)));
+            }
+          }
+          
+          
+          
+          
           if (dacc != null) {
             add(mkEq(dsomePermitted, dbestVars.getPermitted()));
             add(mkImplies(dsomePermitted, dacc));
@@ -1873,6 +1879,9 @@ class EncoderSlice {
 
       if (proto.isConnected()) {
         Prefix p = iface.getConcreteAddress().getPrefix();
+        // xshao debug
+        System.out.println("for import of connected protocol:" + p.toString() + 
+            " at graph edge:" + ge + "|router:"+ router);
         BoolExpr relevant =
             mkAnd(
                 interfaceActive(iface, proto),
@@ -2081,6 +2090,7 @@ class EncoderSlice {
       }
 
       if (proto.isOspf() || proto.isBgp()) {
+        System.out.println("+++++++++++ get export constraints for " +  e);
 
         // BGP cost based on export
         int cost = proto.isBgp() ? addedCost(proto, ge) : 0;
@@ -2173,6 +2183,9 @@ class EncoderSlice {
           BoolExpr eq = equal(conf, proto, ospfRedistribVars, vars, e, false);
           BoolExpr eqPer = mkEq(ospfRedistribVars.getPermitted(), vars.getPermitted());
           acc = mkIf(usesOspf, mkIf(usable, acc, val), mkIf(usable2, mkAnd(eq, eqPer), val));
+          
+          // xshao debug
+          System.out.println("!!!!!!!!!!!!!!!!1 ospfRedicstribVars is not None!!");
         } else {
           acc = mkIf(usable, acc, val);
         }
@@ -2241,6 +2254,8 @@ class EncoderSlice {
       String router = entry.getKey();
       Configuration conf = entry.getValue();
       for (Protocol proto : getProtocols().get(router)) {
+        // xshao debug
+        System.out.println("--------------------start proto:" + proto);
         boolean usedExport = false;
         boolean hasEdge = false;
 
@@ -2248,7 +2263,11 @@ class EncoderSlice {
         assert (les != null);
         for (ArrayList<LogicalEdge> eList : les) {
           for (LogicalEdge e : eList) {
+            
             GraphEdge ge = e.getEdge();
+            
+            // xshao debug
+            System.out.println("Go through logic edge:" + e + " with type " + e.getEdgeType() +" graph edge:" + ge);
 
             if (!getGraph().isEdgeUsed(conf, proto, ge)) {
               continue;
@@ -2275,16 +2294,21 @@ class EncoderSlice {
                     ospfRedistribVars = _ospfRedistributed.get(router);
                     overallBest = _symbolicDecisions.getBestNeighbor().get(router);
                   }
+                  // xshao debug
+                  System.out.println("OSPF----For router:" + router + "|Export at graph edge:" + ge + ". with "+ varsOther);
+
                 } else {
                   varsOther = _symbolicDecisions.getBestNeighbor().get(router);
                   
                   
                   // xshao ++++
-                  // from dbest to variables of provider (smaller as number) 
+                  System.out.println("For router:" + router + "|Export at graph edge:" + ge + ". with "+ varsOther);
+                                    // from dbest to variables of provider (smaller as number) 
                   boolean toprovider = getGraph().getEbgpNeighbors().get(ge).getLocalAs() > 
                   getGraph().getEbgpNeighbors().get( getGraph().getOtherEnd().get(ge)).getLocalAs();
                   if (toprovider) {
                     varsOther = _symbolicDecisions.getBestBGPNeighbor().get(router);
+                    System.out.println("Use dbest!");
                   }
                   // xshao ----
                   
