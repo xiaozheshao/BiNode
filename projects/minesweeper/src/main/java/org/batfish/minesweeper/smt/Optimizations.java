@@ -46,7 +46,7 @@ class Optimizations {
 
   private static final boolean ENABLE_IMPORT_EXPORT_MERGE_OPTIMIZATION = true;
 
-  private static final boolean ENABLE_EXPORT_MERGE_OPTIMIZATION = true;
+  private static final boolean ENABLE_EXPORT_MERGE_OPTIMIZATION = false;
 
   private static final boolean ENABLE_SLICING_OPTIMIZATION = true;
 
