@@ -737,7 +737,8 @@ class TransferSSA {
         for (Map.Entry<String, Integer> entry : _enc.getGraph().getOriginatorId().entrySet()) {
           String r = entry.getKey();
           Integer clientId = entry.getValue();
-          if (!r.equals(router)) {
+          // xshao do not consider IGP
+          if (_enc.getEncoder().getModelIgp() && !r.equals(router)) {
             EncoderSlice s = _enc.getEncoder().getSlice(r);
             SymbolicRoute record = s.getSymbolicDecisions().getBestNeighbor().get(r);
             BoolExpr eq = _enc.mkEq(_current.getIgpMetric(), record.getMetric());

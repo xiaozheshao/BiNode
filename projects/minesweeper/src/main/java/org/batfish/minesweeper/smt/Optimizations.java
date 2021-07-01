@@ -106,8 +106,8 @@ class Optimizations {
     computeBgpInternalNeeded();
     computeCanUseSingleBest();
     // xshao simplify
-    //    computeCanMergeExportVars();
-//    computeCanMergeImportExportVars();
+    computeCanMergeExportVars();
+    computeCanMergeImportExportVars();
     computeRelevantAggregates();
     computeSuppressedAggregates();
     computeNeedClientIds();
