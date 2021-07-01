@@ -2257,8 +2257,9 @@ class EncoderSlice {
                     overallBest = _symbolicDecisions.getBestNeighbor().get(router);
                   }
                 } else {
-                  varsOther = _symbolicDecisions.getBestNeighbor().get(router);
-                  
+                  // xshao
+//                  varsOther = _symbolicDecisions.getBestNeighbor().get(router);
+                  varsOther = _symbolicDecisions.getBestVars(_optimizations, router, proto);
                   
                   // xshao ++++
 //                  System.out.println("router:" + router + " graph edge:" + ge + " type:" + getGraph().peerType(ge));
