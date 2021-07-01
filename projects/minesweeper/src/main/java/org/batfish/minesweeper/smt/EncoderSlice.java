@@ -1577,14 +1577,14 @@ class EncoderSlice {
 
           for (LogicalEdge e : collectAllImportLogicalEdges(router, conf, proto)) {
             // dbest only consider routes from eBGP and client iBGP to RR
-//            System.out.println("Import of dbest of " + router);
- //           System.out.println("import edge from graph edge:" + e.getEdge() + " graph type:" + getGraph().peerType(e.getEdge()));
+            System.out.println("Import of dbest of " + router);
+            System.out.println("import edge from graph edge:" + e.getEdge() + " graph type:" + getGraph().peerType(e.getEdge()));
             boolean todown =
                 (getGraph().peerType(e.getEdge() ) == Graph.BgpSendType.TO_EBGP) 
                 || (getGraph().peerType(e.getEdge() ) == Graph.BgpSendType.TO_RR);
             
             if (!todown){
- //             System.out.println("It is not todown!!!");
+              System.out.println("It is not todown!!!");
               continue;
             }
             
@@ -2261,14 +2261,14 @@ class EncoderSlice {
                   
                   
                   // xshao ++++
-//                  System.out.println("router:" + router + " graph edge:" + ge + " type:" + getGraph().peerType(ge));
-                  // whether export to iBGP peers (not client). If so, from the dbest variable. 
+                  System.out.println("router:" + router + " graph edge:" + ge + " type:" + getGraph().peerType(ge));
+                  /// whether export to iBGP peers (not client). If so, from the dbest variable. 
                   boolean tononclient =
                       (proto.isBgp()) && (getGraph().peerType(ge) != Graph.BgpSendType.TO_CLIENT) && 
                       (getGraph().peerType(ge) != Graph.BgpSendType.TO_EBGP);
                   if (tononclient) {
                     varsOther = _symbolicDecisions.getBestBGPNeighbor().get(router);
-//                    System.out.println("It's tononclient!!!");
+                    System.out.println("It's tononclient!!!");
                   }
                   // xshao ----
                   

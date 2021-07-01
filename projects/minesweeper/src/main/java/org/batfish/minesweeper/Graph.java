@@ -633,8 +633,13 @@ public class Graph {
           for (int i = 0; i < ipList.size(); i++) {
             Ip ip = ipList.get(i);
             BgpActivePeerConfig n = ns.get(i);
+            // xshao iBGP is not eBGP neighbor
+//            System.out.println("for router:" + router + " with peerconfig:" + n + " Local AS:" + n.getLocalAs() + 
+//                " Remote AS:" + n.getRemoteAsns() + (n.getRemoteAsns().equals(LongSpace.of(n.getLocalAs()))  )) ;
             Interface iface = ge.getStart();
-            if (ip != null && iface.getConcreteAddress().getPrefix().containsIp(ip)) {
+//            System.out.println("IP is:" + ip + " iface is:" + iface + " graph edge is:"+ge);
+            if (ip != null && iface.getConcreteAddress().getPrefix().containsIp(ip) && 
+                ! n.getRemoteAsns().equals(LongSpace.of(n.getLocalAs()))) {
               _ebgpNeighbors.put(ge, n);
             }
           }
