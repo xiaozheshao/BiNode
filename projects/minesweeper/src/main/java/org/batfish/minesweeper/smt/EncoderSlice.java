@@ -1483,7 +1483,8 @@ class EncoderSlice {
       Configuration conf = entry.getValue();
       // These constraints will be added at the protocol-level when a single protocol
       if (!_optimizations.getSliceHasSingleProtocol().contains(router)) {
-
+        // xshao debug
+        System.out.println("constraints for best overal for router:" + router);
         boolean someProto = false;
 
         BoolExpr acc = null;
@@ -2091,7 +2092,9 @@ class EncoderSlice {
             cost = 0;
           } else {
             // Lookup if we learned from iBGP, and if so, don't export the route
-            SymbolicRoute other = getBestNeighborPerProtocol(router, proto);
+//            SymbolicRoute other = getBestNeighborPerProtocol(router, proto);
+            // xshao break the potential cycle between the best variable
+            SymbolicRoute other = varsOther;
             assert other != null;
             assert other.getBgpInternal() != null;
             if (other.getBgpInternal() != null) {
@@ -2414,21 +2417,55 @@ class EncoderSlice {
    * relevant constraints.
    */
   void computeEncoding() {
+    long t = System.currentTimeMillis();
+    System.out.println("start bound constraints" + t);
     addBoundConstraints();
     // xshao simplify
 //    addCommunityConstraints();
+    long tt = System.currentTimeMillis();
+    System.out.println("start transfer function" + (tt - t) );
     addTransferFunction();
+    t = tt;
+    tt = System.currentTimeMillis();
+    System.out.println("start history function" + (tt - t));
     addHistoryConstraints();
+    t = tt;
+    tt = System.currentTimeMillis();
+    System.out.println("start best per protocol" + (tt - t));
     addBestPerProtocolConstraints();
+    t = tt;
+    tt = System.currentTimeMillis();
+    System.out.println("start choice per protocol" + (tt - t));
     addChoicePerProtocolConstraints();
+    t = tt;
+    tt = System.currentTimeMillis();
+    System.out.println("start best overall" + (tt - t));
     addBestOverallConstraints();
+    t = tt;
+    tt = System.currentTimeMillis();
+    System.out.println("start control forwarding" + (tt - t));
     addControlForwardingConstraints();
+    t = tt;
+    tt = System.currentTimeMillis();
+    System.out.println("start data forwarding" + (tt - t));
     addDataForwardingConstraints();
+    t = tt;
+    tt = System.currentTimeMillis();
+    System.out.println("start unused default" + (tt - t));
     addUnusedDefaultValueConstraints();
+    t = tt;
+    tt = System.currentTimeMillis();
+    System.out.println("start header space" + (tt - t));
     addHeaderSpaceConstraint();
+    t = tt;
+    tt = System.currentTimeMillis();
+    System.out.println("start environment" + (tt - t));
     if (isMainSlice()) {
       addEnvironmentConstraints();
     }
+    t = tt;
+    tt = System.currentTimeMillis();
+    System.out.println("finish compute encoding" + (tt - t));
   }
 
   /*

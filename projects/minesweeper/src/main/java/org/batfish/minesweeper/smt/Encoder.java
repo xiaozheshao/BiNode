@@ -176,7 +176,7 @@ public class Encoder {
     }
 
     _unsatCore = new UnsatCore(ENABLE_UNSAT_CORE);
-
+    // xshao do not consider fail
     initFailedLinkVariables();
     initFailedNodeVariables();
     initSlices(_question.getHeaderSpace(), graph);
