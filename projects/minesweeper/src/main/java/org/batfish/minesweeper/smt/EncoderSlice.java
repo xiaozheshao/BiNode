@@ -132,7 +132,7 @@ class EncoderSlice {
     initRedistributionProtocols();
     initVariables();
     // xshao simplify
-    //    initAclFunctions();
+    initAclFunctions();
     initForwardingAcross();
   }
 
@@ -428,10 +428,12 @@ class EncoderSlice {
     BoolExpr lowerBitsMatch = firstBitsEqual(_symbolicPacket.getDstIp(), pfx, len);
     if (lower == upper) {
       BoolExpr equalLen = mkEq(prefixLen, mkInt(lower));
+//      System.out.println("_______________isRelevantFor:"+equalLen);
       return mkAnd(equalLen, lowerBitsMatch);
     } else {
       BoolExpr lengthLowerBound = mkGe(prefixLen, mkInt(lower));
       BoolExpr lengthUpperBound = mkLe(prefixLen, mkInt(upper));
+//      System.out.println("_______________isRelevantFor(lower,upper):"+lengthLowerBound + "||||||"+lengthUpperBound);
       return mkAnd(lengthLowerBound, lengthUpperBound, lowerBitsMatch);
     }
   }
@@ -531,9 +533,9 @@ class EncoderSlice {
    * each protocol as well as for the router as a whole
    */
   private void addBestVariables() {
-//    System.out.println("EncoderSlice: addBestVariables. BITS:" + BITS);
+    System.out.println("EncoderSlice: addBestVariables. BITS:" + BITS);
     for (Entry<String, List<Protocol>> entry : getProtocols().entrySet()) {
-//      System.out.println("entry" + entry.toString());
+//      System.out.println("entry:" + entry.toString());
       String router = entry.getKey();
       List<Protocol> allProtos = entry.getValue();
       // Overall best
@@ -552,6 +554,7 @@ class EncoderSlice {
 
       // Best per protocol
       if (!_optimizations.getSliceHasSingleProtocol().contains(router)) {
+//        System.out.println("do not use single slice for router:" + router);
         for (Protocol proto : getProtocols().get(router)) {
           String name =
               String.format(
@@ -580,7 +583,9 @@ class EncoderSlice {
                    new SymbolicRoute(this, newname, router, proto, _optimizations, null, false);
                getAllSymbolicRecords().add(evBest);
                _symbolicDecisions.getBestBGPNeighbor().put(router, evBest);
-//               System.out.println("EncoderSlice: Add evBest for router:" + router + "name:" + newname);
+               if (Encoder.ENABLE_DEBUGGING) {
+                 System.out.println("EncoderSlice: Add evBest for router:" + router + "name:" + newname);
+               }
              }
            }
           
@@ -591,6 +596,9 @@ class EncoderSlice {
       }else if (isMainSlice())  {
         // xshao ++++
         // if there is only one protocol, BGP, for this router and it's main slice.
+        if (Encoder.ENABLE_DEBUGGING) {
+          System.out.println("in isMainSlice() for router:" + router);
+        }
         if (getProtocols().get(router).contains(Protocol.BGP)){
           String newname =
               String.format(
@@ -958,6 +966,10 @@ class EncoderSlice {
     add(mkLt(_symbolicPacket.getIcmpCode(), upperBound4));
 
     for (SymbolicRoute e : getAllSymbolicRecords()) {
+      // xshao debug
+      if (Encoder.ENABLE_DEBUGGING) {
+        System.out.println("symbolic router:" + e.getName() + "|" + e.getProto());
+      }
       if (e.getRouterId() != null) {
         add(mkGe(e.getRouterId(), zero));
       }
@@ -1483,14 +1495,16 @@ class EncoderSlice {
       Configuration conf = entry.getValue();
       // These constraints will be added at the protocol-level when a single protocol
       if (!_optimizations.getSliceHasSingleProtocol().contains(router)) {
-        // xshao debug
-        System.out.println("constraints for best overal for router:" + router);
         boolean someProto = false;
 
         BoolExpr acc = null;
         BoolExpr somePermitted = null;
         SymbolicRoute best = _symbolicDecisions.getBestNeighbor().get(router);
-
+        
+        // xshao debug
+        if (Encoder.ENABLE_DEBUGGING) {
+          System.out.println("Overal Best for router:" + router + " " + best.getName());
+        }
         for (Protocol proto : getProtocols().get(router)) {
           someProto = true;
 
@@ -1513,6 +1527,10 @@ class EncoderSlice {
           add(
               mkImplies(
                   bestVars.getPermitted(), greaterOrEqual(conf, proto, best, bestVars, null)));
+          if (Encoder.ENABLE_DEBUGGING) {
+            System.out.println("For proto:" + proto + ":" + mkImplies(
+                bestVars.getPermitted(), greaterOrEqual(conf, proto, best, bestVars, null)));
+          }
         }
 
         if (someProto) {
@@ -1522,6 +1540,9 @@ class EncoderSlice {
           }
         } else {
           add(mkNot(best.getPermitted()));
+        }
+        if (Encoder.ENABLE_DEBUGGING) {
+          System.out.println("ACC:" + acc + "\n");
         }
       }
     }
@@ -1540,6 +1561,9 @@ class EncoderSlice {
       for (Protocol proto : getProtocols().get(router)) {
 
         SymbolicRoute bestVars = _symbolicDecisions.getBestVars(_optimizations, router, proto);
+        if (Encoder.ENABLE_DEBUGGING) {
+          System.out.println("Best constraint for Protocol:" + proto + " Router:" + router + " symbolic:" + bestVars.getName());
+        }
         assert (bestVars != null);
 
         BoolExpr acc = null;
@@ -1578,18 +1602,25 @@ class EncoderSlice {
 
           for (LogicalEdge e : collectAllImportLogicalEdges(router, conf, proto)) {
             // dbest only consider routes from eBGP and client iBGP to RR
-//            System.out.println("Import of dbest of " + router);
-//            System.out.println("import edge from graph edge:" + e.getEdge() + " graph type:" + getGraph().peerType(e.getEdge()));
+            if (Encoder.ENABLE_DEBUGGING) {
+              System.out.println("Import of dbest of " + router);
+              System.out.println("import edge from logical edge:" + e.getSymbolicRecord().getName() + "Graph Edge:" + e.getEdge() + " graph type:" + getGraph().peerType(e.getEdge()));
+            }
             boolean todown =
                 (getGraph().peerType(e.getEdge() ) == Graph.BgpSendType.TO_EBGP) 
-                || (getGraph().peerType(e.getEdge() ) == Graph.BgpSendType.TO_RR);
+                || (getGraph().peerType(e.getEdge() ) == Graph.BgpSendType.TO_CLIENT);
             
             if (!todown){
-//              System.out.println("It is not todown!!!");
+              if (Encoder.ENABLE_DEBUGGING) {
+                System.out.println("It is not todown!!! Skip!!!");
+              }
               continue;
             }
             
             SymbolicRoute vars = correctVars(e);
+            if (Encoder.ENABLE_DEBUGGING) {
+              System.out.println("Symbolic for import logical edge:" + vars.getName());
+            }
             
             
             if (dsomePermitted == null) {
@@ -2207,7 +2238,8 @@ class EncoderSlice {
 
         if (Encoder.ENABLE_DEBUGGING) {
           System.out.println("EXPORT: " + router + " " + varsOther.getName() + " " + ge);
-          System.out.println(acc.simplify());
+//          System.out.println(acc.simplify());
+          System.out.println(acc);
           System.out.println("\n\n");
         }
       }
@@ -2265,14 +2297,18 @@ class EncoderSlice {
                   varsOther = _symbolicDecisions.getBestVars(_optimizations, router, proto);
                   
                   // xshao ++++
-//                  System.out.println("router:" + router + " graph edge:" + ge + " type:" + getGraph().peerType(ge));
+                  if (Encoder.ENABLE_DEBUGGING) {
+                    System.out.println("router:" + router + " graph edge:" + ge + " type:" + getGraph().peerType(ge));
+                  }
                   /// whether export to iBGP peers (not client). If so, from the dbest variable. 
                   boolean tononclient =
                       (proto.isBgp()) && (getGraph().peerType(ge) != Graph.BgpSendType.TO_CLIENT) && 
                       (getGraph().peerType(ge) != Graph.BgpSendType.TO_EBGP);
                   if (tononclient) {
                     varsOther = _symbolicDecisions.getBestBGPNeighbor().get(router);
-//                    System.out.println("It's tononclient!!!");
+                    if (Encoder.ENABLE_DEBUGGING) {
+                      System.out.println("It's tononclient!!!");
+                    }
                   }
                   // xshao ----
                   
@@ -2417,55 +2453,79 @@ class EncoderSlice {
    * relevant constraints.
    */
   void computeEncoding() {
-    long t = System.currentTimeMillis();
-    System.out.println("start bound constraints" + t);
+      long t = System.currentTimeMillis();
+    if (Encoder.ENABLE_DEBUGGING) {
+      System.out.println("start bound constraints" + t);
+    }
     addBoundConstraints();
     // xshao simplify
 //    addCommunityConstraints();
     long tt = System.currentTimeMillis();
-    System.out.println("start transfer function" + (tt - t) );
+    if (Encoder.ENABLE_DEBUGGING) {
+      System.out.println("start transfer function" + (tt - t) );
+    }
     addTransferFunction();
-    t = tt;
-    tt = System.currentTimeMillis();
-    System.out.println("start history function" + (tt - t));
+    if (Encoder.ENABLE_DEBUGGING) {
+      t = tt;
+      tt = System.currentTimeMillis();
+      System.out.println("start history function" + (tt - t));
+    }
     addHistoryConstraints();
-    t = tt;
-    tt = System.currentTimeMillis();
-    System.out.println("start best per protocol" + (tt - t));
+    if (Encoder.ENABLE_DEBUGGING) {
+      t = tt;
+      tt = System.currentTimeMillis();
+      System.out.println("start best per protocol" + (tt - t));
+    }
     addBestPerProtocolConstraints();
-    t = tt;
-    tt = System.currentTimeMillis();
-    System.out.println("start choice per protocol" + (tt - t));
+    if (Encoder.ENABLE_DEBUGGING) {
+      t = tt;
+      tt = System.currentTimeMillis();
+      System.out.println("start choice per protocol" + (tt - t));
+    }
     addChoicePerProtocolConstraints();
-    t = tt;
-    tt = System.currentTimeMillis();
-    System.out.println("start best overall" + (tt - t));
+    if (Encoder.ENABLE_DEBUGGING) {
+      t = tt;
+      tt = System.currentTimeMillis();
+      System.out.println("start best overall" + (tt - t));
+    }
     addBestOverallConstraints();
-    t = tt;
-    tt = System.currentTimeMillis();
-    System.out.println("start control forwarding" + (tt - t));
-//    addControlForwardingConstraints();
-    t = tt;
-    tt = System.currentTimeMillis();
-    System.out.println("start data forwarding" + (tt - t));
-//    addDataForwardingConstraints();
-    t = tt;
-    tt = System.currentTimeMillis();
-    System.out.println("start unused default" + (tt - t));
+    if (Encoder.ENABLE_DEBUGGING) {
+      t = tt;
+      tt = System.currentTimeMillis();
+      System.out.println("start control forwarding" + (tt - t));
+    }
+    //addControlForwardingConstraints();
+    if (Encoder.ENABLE_DEBUGGING) {
+      t = tt;
+      tt = System.currentTimeMillis();
+      System.out.println("start data forwarding" + (tt - t));
+    }
+    //addDataForwardingConstraints();
+    if (Encoder.ENABLE_DEBUGGING) {
+      t = tt;
+      tt = System.currentTimeMillis();
+      System.out.println("start unused default" + (tt - t));
+    }
     addUnusedDefaultValueConstraints();
-    t = tt;
-    tt = System.currentTimeMillis();
-    System.out.println("start header space" + (tt - t));
+    if (Encoder.ENABLE_DEBUGGING) {
+      t = tt;
+      tt = System.currentTimeMillis();
+      System.out.println("start header space" + (tt - t));
+    }
     addHeaderSpaceConstraint();
-    t = tt;
-    tt = System.currentTimeMillis();
-    System.out.println("start environment" + (tt - t));
+    if (Encoder.ENABLE_DEBUGGING) {
+      t = tt;
+      tt = System.currentTimeMillis();
+      System.out.println("start environment" + (tt - t));
+    }
     if (isMainSlice()) {
       addEnvironmentConstraints();
     }
-    t = tt;
-    tt = System.currentTimeMillis();
-    System.out.println("finish compute encoding" + (tt - t));
+    if (Encoder.ENABLE_DEBUGGING) {
+      t = tt;
+      tt = System.currentTimeMillis();
+      System.out.println("finish compute encoding" + (tt - t));
+    }
   }
 
   /*

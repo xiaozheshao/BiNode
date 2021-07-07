@@ -104,7 +104,8 @@ class Optimizations {
     _keepOspfType = computeKeepOspfType();
     initProtocols();
     computeBgpInternalNeeded();
-    computeCanUseSingleBest();
+    // xshao avoid possible encoding problem for prefixlength from best variable
+//    computeCanUseSingleBest();
     // xshao simplify
     computeCanMergeExportVars();
     computeCanMergeImportExportVars();

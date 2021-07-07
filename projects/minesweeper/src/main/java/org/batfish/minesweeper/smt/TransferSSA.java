@@ -253,14 +253,18 @@ class TransferSSA {
       // we keep only a single FIB entry. Since BGP exporting a network
       // depends on the existence of an IGP route, we become more precise
       // by checking for static/connected/OSPF routes specifically.
+//      System.out.println("__________________________matchPrefixSet:" + ranges);
       if (ranges.size() == 1) {
+//        System.out.println("_________________________ranges.size()==1");
         for (PrefixRange r : ranges) {
           int start = r.getLengthRange().getStart();
           int end = r.getLengthRange().getEnd();
           Prefix pfx = r.getPrefix();
+//          System.out.println("_________________________ranges.size()==2|"+start+"|"+end+"|"+pfx);
           if (start == end && start == pfx.getPrefixLength()) {
             String router = _conf.getHostname();
             Set<Prefix> origin = _enc.getOriginatedNetworks().get(router, Protocol.BGP);
+//            System.out.println("_________________________ranges.size()==3|"+router+"|"+origin);
             if (origin != null && origin.contains(pfx)) {
               // Compute static and connected routes
               Set<Prefix> ostatic = _enc.getOriginatedNetworks().get(router, Protocol.STATIC);
@@ -268,7 +272,9 @@ class TransferSSA {
               boolean hasStatic = ostatic != null && ostatic.contains(pfx);
               boolean hasConnected = oconn != null && oconn.contains(pfx);
               ArithExpr originLength = _enc.mkInt(pfx.getPrefixLength());
+//              System.out.println("_________________________ranges.size()==4"+ostatic+"|"+oconn+"|"+hasStatic+"|"+hasConnected+"|"+originLength);
               if (hasStatic || hasConnected) {
+//                System.out.println("_________________________ranges.size()==5");
                 BoolExpr directRoute = _enc.isRelevantFor(originLength, r);
                 ArithExpr newLength = _enc.mkIf(directRoute, originLength, otherLen);
                 result = result.addChangedVariable("PREFIX-LEN", newLength);
@@ -276,10 +282,12 @@ class TransferSSA {
               } else {
                 // Also use network statement if OSPF has a route with the correct length
                 SymbolicRoute rec = _enc.getBestNeighborPerProtocol(router, Protocol.OSPF);
+//                System.out.println("_________________________ranges.size()==6" + rec.getPrefixLength());
                 if (rec != null) {
                   BoolExpr ospfRelevant = _enc.isRelevantFor(rec.getPrefixLength(), r);
                   ArithExpr newLength = _enc.mkIf(ospfRelevant, originLength, otherLen);
                   result = result.addChangedVariable("PREFIX-LEN", newLength);
+//                  System.out.println("_________________________ranges.size()==7" + ospfRelevant + "||||"+newLength+"||||"+result);
                   return result.setReturnValue(ospfRelevant);
                 }
               }
@@ -291,6 +299,7 @@ class TransferSSA {
       // Compute if the other best route is relevant for this match statement
       BoolExpr acc = _enc.mkFalse();
       for (PrefixRange range : ranges) {
+//        System.out.println("_________________________ranges.size()==8");
         acc = _enc.mkOr(acc, _enc.isRelevantFor(otherLen, range));
       }
 
@@ -371,6 +380,8 @@ class TransferSSA {
    */
   private TransferResult<BoolExpr, BoolExpr> compute(
       BooleanExpr expr, TransferParam<SymbolicRoute> p) {
+//    System.out.println("///////// in compute(2) p:" + p.getData().getPrefixLength() + " expr:" + expr);
+    
     TransferParam<SymbolicRoute> pCur = p;
     // TODO: right now everything is IPV4
     if (expr instanceof MatchIpv4) {
@@ -388,7 +399,9 @@ class TransferSSA {
       BoolExpr acc = _enc.mkTrue();
       TransferResult<BoolExpr, BoolExpr> result = new TransferResult<>();
       for (BooleanExpr be : c.getConjuncts()) {
+//        System.out.println("+_+_+_+_+_+_+_+_+_+_+_before Conjunction:" + be);
         TransferResult<BoolExpr, BoolExpr> r = compute(be, pCur.indent());
+//        System.out.println("+_+_+_+_+_+_+_+_+_+_+_after Conjunction:" + r.getReturnValue());
         result = result.addChangedVariables(r);
         acc = _enc.mkAnd(acc, r.getReturnValue());
       }
@@ -402,7 +415,9 @@ class TransferSSA {
       BoolExpr acc = _enc.mkFalse();
       TransferResult<BoolExpr, BoolExpr> result = new TransferResult<>();
       for (BooleanExpr be : d.getDisjuncts()) {
+//        System.out.println("+_+_+_+_+_+_+_+_+_+_+_before Disjunction:" + be);
         TransferResult<BoolExpr, BoolExpr> r = compute(be, pCur.indent());
+//        System.out.println("+_+_+_+_+_+_+_+_+_+_+_after Disjunction:" + r.getReturnValue());
         result = result.addChangedVariables(r);
         acc = _enc.mkOr(acc, r.getReturnValue());
       }
@@ -496,9 +511,11 @@ class TransferSSA {
     if (expr instanceof MatchPrefixSet) {
       pCur.debug("MatchPrefixSet");
       MatchPrefixSet m = (MatchPrefixSet) expr;
+//      System.out.println("++++++++________++++++++MatchPrefixSet m:" + m);
       // For BGP, may change prefix length
       TransferResult<BoolExpr, BoolExpr> result =
           matchPrefixSet(_conf, m.getPrefixSet(), pCur.getData());
+//      System.out.println("++++++++________++++++++MatchPrefixSet2 result:" + result.getReturnValue());
       return result.setReturnAssignedValue(_enc.mkTrue());
 
       // TODO: implement me
@@ -694,6 +711,9 @@ class TransferSSA {
     BoolExpr len =
         _enc.safeEq(
             _current.getPrefixLength(), getOrDefault(p.getData().getPrefixLength(), defaultLen));
+//    System.out.println("prefixlength:" + p.getData().getPrefixLength());
+//    System.out.println("defaultLen:" + defaultLen);
+    
     BoolExpr per = _enc.safeEq(_current.getPermitted(), p.getData().getPermitted());
 
     // Only update the router id for import edges
@@ -829,7 +849,7 @@ class TransferSSA {
         _enc.mkAnd(
             per, len, ad, med, lp, met, id, cid, type, area, comms, history, isInternal, igpMet);
     BoolExpr noOverflow = noOverflow(otherMet, _proto);
-
+//    System.out.println("updates:" + updates);
     return _enc.mkIf(noOverflow, updates, _enc.mkNot(_current.getPermitted()));
   }
 
@@ -861,6 +881,7 @@ class TransferSSA {
         break;
       case "PREFIX-LEN":
         p.getData().setPrefixLength((ArithExpr) expr);
+        System.out.println("!!!!!!! in updateSingleValue setPrefixLength:" + expr);
         break;
       case "ADMIN-DIST":
         p.getData().setAdminDist((ArithExpr) expr);
@@ -924,6 +945,7 @@ class TransferSSA {
       ArithExpr newValue = _enc.mkIf(guard, (ArithExpr) t, (ArithExpr) f);
       newValue = _enc.mkIf(r.getReturnAssignedValue(), p.getData().getPrefixLength(), newValue);
       ArithExpr ret = createArithVariableWith(p, "PREFIX-LEN", newValue);
+      System.out.println("!!!!!!!!!!!!1In JoinPoint ret:" + ret);
       p.getData().setPrefixLength(ret);
       return new MsPair<>(ret, null);
     }
@@ -990,6 +1012,7 @@ class TransferSSA {
       TransferParam<SymbolicRoute> p,
       TransferResult<BoolExpr, BoolExpr> result) {
     TransferParam<SymbolicRoute> curP = p;
+//    System.out.println("just in compute(3) curP:" + curP.getData().getPrefixLength());
     TransferResult<BoolExpr, BoolExpr> curResult = result;
     boolean doesReturn = false;
 
@@ -1079,7 +1102,9 @@ class TransferSSA {
       } else if (stmt instanceof If) {
         curP.debug("If");
         If i = (If) stmt;
+//        System.out.println("!!!!!!!!!Compute(3) before If curP:" + curP.getData().getPrefixLength());
         TransferResult<BoolExpr, BoolExpr> r = compute(i.getGuard(), curP);
+//        System.out.println("!!!!!!!!!Compute(3) in If:" + r + "|||" + r.getReturnValue());
         curResult = curResult.addChangedVariables(r);
         BoolExpr guard = (BoolExpr) r.getReturnValue().simplify();
         String str = guard.toString();
@@ -1095,7 +1120,9 @@ class TransferSSA {
         switch (str) {
           case "true":
             curP.debug("True Branch");
+//            System.out.println("======before======curP indent:" + curP.getData().getName() + " " + curP.getData().getPrefixLength() + "; curResult:"+ curResult.getReturnValue());
             curResult = compute(i.getTrueStatements(), curP.indent(), curResult);
+//            System.out.println("======after=====curP indent:" + curP.getData().getName() + " " + curP.getData().getPrefixLength() + "; curResult:"+ curResult.getReturnValue());
             break;
           case "false":
             curP.debug("False Branch");
@@ -1282,6 +1309,8 @@ class TransferSSA {
       }
     }
 
+
+//    System.out.println("before if prefixlength:" + curP.getData().getPrefixLength());
     // If this is the outermost call, then we relate the variables
     if (curP.getInitialCall()) {
       curP.debug("InitialCall finalizing");
@@ -1295,6 +1324,7 @@ class TransferSSA {
           curResult = returnValue(curP, curResult, false);
         }
       }
+//      System.out.println("before related prefixlength:" + curP.getData().getPrefixLength());
       BoolExpr related = relateVariables(curP, curResult);
       BoolExpr retValue =
           _enc.mkIf(curResult.getReturnValue(), related, _enc.mkNot(_current.getPermitted()));
@@ -1376,6 +1406,7 @@ class TransferSSA {
     ArithExpr prefixLen = param.getData().getPrefixLength();
     if (_isExport && _proto.isBgp()) {
       _aggregates = aggregateRoutes();
+//      System.out.println("!!!!!!! ComputeIntermediatePrefixLen aggregates:" + _aggregates);
       if (!_aggregates.isEmpty()) {
         for (Map.Entry<Prefix, Boolean> entry : _aggregates.entrySet()) {
           Prefix p = entry.getKey();
@@ -1387,6 +1418,7 @@ class TransferSSA {
           prefixLen = _enc.mkIf(relevant, len, prefixLen);
         }
         ArithExpr i = createArithVariableWith(param, "PREFIX-LEN", prefixLen);
+//        System.out.println("!!!!!!!!!!!!!!!!!!!!! ComputeIntermediatePrefixLen ArithExpr:" + i);
         param.getData().setPrefixLength(i);
       }
     }
@@ -1432,9 +1464,13 @@ class TransferSSA {
     SymbolicRoute o = new SymbolicRoute(_other);
     TransferParam<SymbolicRoute> p = new TransferParam<>(o, Encoder.ENABLE_DEBUGGING);
     computeIntermediatePrefixLen(p);
+//    System.out.println("----------------p:" + p.getData().getPrefixLength());
     applyMetricUpdate(p);
+//    System.out.println("***************p (after applyMetric) :" + p.getData().getPrefixLength());
     setDefaultLocalPref(p);
+//    System.out.println("***************p (after setDefaultLocalPref) :" + p.getData().getPrefixLength());
     TransferResult<BoolExpr, BoolExpr> result = compute(_statements, p, initialResult());
+//    System.out.println("+++++++++++++++p:" + p.getData().getPrefixLength());
     return result.getReturnValue();
   }
 }
