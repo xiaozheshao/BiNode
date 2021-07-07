@@ -2444,11 +2444,11 @@ class EncoderSlice {
     t = tt;
     tt = System.currentTimeMillis();
     System.out.println("start control forwarding" + (tt - t));
-    addControlForwardingConstraints();
+//    addControlForwardingConstraints();
     t = tt;
     tt = System.currentTimeMillis();
     System.out.println("start data forwarding" + (tt - t));
-    addDataForwardingConstraints();
+//    addDataForwardingConstraints();
     t = tt;
     tt = System.currentTimeMillis();
     System.out.println("start unused default" + (tt - t));
