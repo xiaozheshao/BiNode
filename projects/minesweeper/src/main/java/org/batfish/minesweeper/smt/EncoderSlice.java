@@ -2494,13 +2494,13 @@ class EncoderSlice {
       tt = System.currentTimeMillis();
       System.out.println("start control forwarding" + (tt - t));
     }
-    //addControlForwardingConstraints();
+    addControlForwardingConstraints();
     if (Encoder.ENABLE_DEBUGGING) {
       t = tt;
       tt = System.currentTimeMillis();
       System.out.println("start data forwarding" + (tt - t));
     }
-    //addDataForwardingConstraints();
+    addDataForwardingConstraints();
     if (Encoder.ENABLE_DEBUGGING) {
       t = tt;
       tt = System.currentTimeMillis();
