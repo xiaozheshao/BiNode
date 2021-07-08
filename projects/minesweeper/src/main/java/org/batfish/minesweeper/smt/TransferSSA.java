@@ -881,7 +881,9 @@ class TransferSSA {
         break;
       case "PREFIX-LEN":
         p.getData().setPrefixLength((ArithExpr) expr);
-        System.out.println("!!!!!!! in updateSingleValue setPrefixLength:" + expr);
+        if (Encoder.ENABLE_DEBUGGING) {
+          System.out.println("!!!!!!! in updateSingleValue setPrefixLength:" + expr);
+        }
         break;
       case "ADMIN-DIST":
         p.getData().setAdminDist((ArithExpr) expr);
