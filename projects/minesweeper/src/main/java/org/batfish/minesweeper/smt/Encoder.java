@@ -57,7 +57,7 @@ import org.batfish.minesweeper.utils.Tuple;
  */
 public class Encoder {
 
-  static final Boolean ENABLE_DEBUGGING = false;
+  static final Boolean ENABLE_DEBUGGING = true;
   static final String MAIN_SLICE_NAME = "SLICE-MAIN_";
   private static final boolean ENABLE_UNSAT_CORE = false;
   private int _encodingId;
@@ -830,6 +830,11 @@ public class Encoder {
       if (!name.equals(MAIN_SLICE_NAME)) {
         slice.computeEncoding();
       }
+    }    
+    if (Encoder.ENABLE_DEBUGGING) {
+      System.out.println("===========The final model:");
+      System.out.println(_solver);
+      System.out.println("=============================");
     }
   }
 
