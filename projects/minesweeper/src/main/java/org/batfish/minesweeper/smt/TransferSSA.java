@@ -739,13 +739,13 @@ class TransferSSA {
         _graphEdge.isAbstract()
             && (_enc.getGraph().peerType(_graphEdge) == Graph.BgpSendType.TO_RR);
 
-    if (_graphEdge.isAbstract() && _current.getIgpMetric() != null) {
+    // xshao change: consider whether modeling IGP
+    if (_enc.getEncoder().getModelIgp() && _graphEdge.isAbstract() && _current.getIgpMetric() != null) {
       String router = _graphEdge.getRouter();
       String peer = _graphEdge.getPeer();
 
       // Case where it is a non client, we lookup the next-hop
-      // xshao change: consider whether modeling IGP
-      if (isNonClient && _enc.getEncoder().getModelIgp()) {
+      if (isNonClient) {
         EncoderSlice s = _enc.getEncoder().getSlice(peer);
         SymbolicRoute r = s.getSymbolicDecisions().getBestNeighbor().get(router);
         igpMet = _enc.mkEq(_current.getIgpMetric(), r.getMetric());
@@ -757,8 +757,7 @@ class TransferSSA {
         for (Map.Entry<String, Integer> entry : _enc.getGraph().getOriginatorId().entrySet()) {
           String r = entry.getKey();
           Integer clientId = entry.getValue();
-          // xshao do not consider IGP
-          if (_enc.getEncoder().getModelIgp() && !r.equals(router)) {
+          if (!r.equals(router)) {
             EncoderSlice s = _enc.getEncoder().getSlice(r);
             SymbolicRoute record = s.getSymbolicDecisions().getBestNeighbor().get(r);
             BoolExpr eq = _enc.mkEq(_current.getIgpMetric(), record.getMetric());
