@@ -1842,6 +1842,16 @@ class EncoderSlice {
                 
                 fwd = mkOr(fwd, mkAnd(ctrlFwd, acc));
 
+              }else {
+                // Otherwise, we know the next hop statically
+                // adjust for iBGP in main slice
+                if (_encoder.getModelIgp() && isMainSlice()) {
+                  EncoderSlice s = _encoder.getSlice(ge2.getPeer());
+                  if (otherSliceHasEdge(s, router, ge)) {
+                    BoolExpr outEdge = s.getSymbolicDecisions().getDataForwarding().get(router, ge);
+                    fwd = mkOr(fwd, mkAnd(ctrlFwd, outEdge));
+                  }
+                }
               }
             }
           }
