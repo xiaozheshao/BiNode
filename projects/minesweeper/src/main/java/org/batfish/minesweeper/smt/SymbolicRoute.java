@@ -147,7 +147,9 @@ public class SymbolicRoute implements IDeepCopy<SymbolicRoute> {
     boolean hasBgp = slice.getProtocols().get(router).contains(Protocol.BGP);
     boolean multipleProtos = slice.getProtocols().get(router).size() > 1;
     boolean modelAd = !_isEnv && ((_isBestOverall && multipleProtos) || opts.getKeepAdminDist());
+    // xshao no bgpInternal
     boolean modelIbgp = slice.isMainSlice() && opts.getNeedBgpInternal().contains(router);
+    modelIbgp = false;
     boolean modelLp =
         slice.isMainSlice()
             && !_isEnv
@@ -207,6 +209,8 @@ public class SymbolicRoute implements IDeepCopy<SymbolicRoute> {
           ((_isBest && modelIbgp) || (isAbstract && !_isExport)
               ? ctx.mkIntConst(_name + "_igpMetric")
               : null);
+      // xshao do not consider igpmetric
+      _igpMetric = null;
       _ospfArea = null;
       _ospfType = null;
 
