@@ -743,6 +743,12 @@ public class Encoder {
       numEdges += e.getValue().size();
     }
 
+    if (ENABLE_DEBUGGING) {
+      System.out.println("---------------Adding properties and before verification: _solver");
+      System.out.println(_solver);
+      System.out.println("---------------");
+    }
+    
     long start = System.currentTimeMillis();
     Status status = _solver.check();
     long time = System.currentTimeMillis() - start;
