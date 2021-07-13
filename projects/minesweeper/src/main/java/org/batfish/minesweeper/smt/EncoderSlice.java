@@ -1637,6 +1637,36 @@ class EncoderSlice {
             }
             add(mkImplies(vars.getPermitted(), greaterOrEqual(conf, proto, dbestVars, vars, e)));
           }
+          
+       // consider connected network. dbest also depends on the connected network. 
+          for (Protocol proto2 : getProtocols().get(router)) {
+            if (proto2.isConnected()) {
+
+              SymbolicRoute bestVars2 = _symbolicDecisions.getBestVars(_optimizations, router, proto2);
+              assert (bestVars2 != null);
+
+              if (dsomePermitted == null) {
+                dsomePermitted = bestVars2.getPermitted();
+              } else {
+                dsomePermitted = mkOr(dsomePermitted, bestVars2.getPermitted());
+              }
+
+              BoolExpr val =
+                  mkAnd(bestVars2.getPermitted(), equal(conf, proto2, dbestVars, bestVars2, null, true));
+              if (dacc == null) {
+                dacc = val;
+              } else {
+                dacc = mkOr(dacc, val);
+              }
+              add(
+                mkImplies(
+                    bestVars2.getPermitted(), greaterOrEqual(conf, proto2, dbestVars, bestVars2, null)));
+            }
+          }
+          
+          
+          
+          
           if (dacc != null) {
             add(mkEq(dsomePermitted, dbestVars.getPermitted()));
             add(mkImplies(dsomePermitted, dacc));
@@ -2305,8 +2335,8 @@ class EncoderSlice {
                   }
                 } else {
                   // xshao
-//                  varsOther = _symbolicDecisions.getBestNeighbor().get(router);
-                  varsOther = _symbolicDecisions.getBestVars(_optimizations, router, proto);
+                  varsOther = _symbolicDecisions.getBestNeighbor().get(router);
+//                  varsOther = _symbolicDecisions.getBestVars(_optimizations, router, proto);
                   
                   // xshao ++++
                   if (Encoder.ENABLE_DEBUGGING) {

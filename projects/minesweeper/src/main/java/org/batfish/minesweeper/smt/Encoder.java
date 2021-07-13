@@ -752,6 +752,7 @@ public class Encoder {
     }
     
     long start = System.currentTimeMillis();
+    System.out.println("Start to verify!!!");
     Status status = _solver.check();
     // xshao 5x
     _solver.check();
