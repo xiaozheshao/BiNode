@@ -784,6 +784,9 @@ public class Encoder {
 
     if (status == Status.UNSATISFIABLE) {
       VerificationResult res = new VerificationResult(true, null, null, null, null, null, stats);
+      if (ENABLE_DEBUGGING) {
+        res.debug(getMainSlice(), true, null);
+      }
       return new Tuple<>(res, null);
     } else if (status == Status.UNKNOWN) {
       throw new BatfishException("ERROR: satisfiability unknown");
