@@ -2047,7 +2047,7 @@ class EncoderSlice {
             loop = getSymbolicDecisions().getControlForwarding().get(peer, gePeer);
           }
           // xshao do not consider CONTROL-FORWARDING 
-          loop = mkFalse();
+//          loop = mkFalse();
           assert (loop != null);
 
           BoolExpr usable =
