@@ -479,7 +479,7 @@ public class Graph {
           graphEdges.add(ge);
         }
         if (!neighborIfaces.isEmpty()) {
-          boolean hasMultipleEnds = (neighborIfaces.size() > 2);
+          boolean hasMultipleEnds = (neighborIfaces.size() > 500);
           if (hasMultipleEnds) {
             GraphEdge ge = new GraphEdge(i1, null, router, null, false, false);
             graphEdges.add(ge);
