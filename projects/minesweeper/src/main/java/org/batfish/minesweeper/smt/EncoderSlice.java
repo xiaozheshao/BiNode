@@ -2047,7 +2047,7 @@ class EncoderSlice {
             loop = getSymbolicDecisions().getControlForwarding().get(peer, gePeer);
           }
           // xshao do not consider CONTROL-FORWARDING 
-//          loop = mkFalse();
+          loop = mkFalse();
           assert (loop != null);
 
           BoolExpr usable =
@@ -2335,8 +2335,8 @@ class EncoderSlice {
                   }
                 } else {
                   // xshao
-                  varsOther = _symbolicDecisions.getBestNeighbor().get(router);
-//                  varsOther = _symbolicDecisions.getBestVars(_optimizations, router, proto);
+//                  varsOther = _symbolicDecisions.getBestNeighbor().get(router);
+                  varsOther = _symbolicDecisions.getBestVars(_optimizations, router, proto);
                   
                   // xshao ++++
                   if (Encoder.ENABLE_DEBUGGING) {

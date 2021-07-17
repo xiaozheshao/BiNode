@@ -794,7 +794,8 @@ public class Graph {
           Set<Ip> candidateIps = ipEntry.getValue();
           for (Ip candidateLocalIp : candidateIps) {
             // Check that it's not a self-edge and candidate's IP matches remote prefix
-            if (!localHostname.equals(candidateHostname)
+            // xshao check candidateLocalIp is not null
+            if (candidateLocalIp != null && !localHostname.equals(candidateHostname)
                 && remotePrefix.containsIp(candidateLocalIp)) {
               // We have a neighbor match
               neighbors.put(localHostname, candidateHostname, localBgpConfig);

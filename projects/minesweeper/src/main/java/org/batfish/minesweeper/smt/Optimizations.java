@@ -464,7 +464,7 @@ class Optimizations {
                     boolean safeMergeEdge =
                         _encoderSlice.getGraph().isEdgeUsed(conf, proto, ge) && !ge.isAbstract();
                     // xshao try merge export import for an abstract iBGP edge.
-//                    safeMergeEdge = true;
+                    safeMergeEdge = true;
 
                     // Don't merge when bgp internal/external can differ
                     boolean sameInternal =
