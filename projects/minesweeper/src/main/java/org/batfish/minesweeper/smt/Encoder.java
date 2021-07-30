@@ -180,7 +180,82 @@ public class Encoder {
     initFailedLinkVariables();
     initFailedNodeVariables();
     initSlices(_question.getHeaderSpace(), graph);
+    
+    // xshao add Bellman-Ford
+    bellman_ford();
   }
+  
+  // xshao Bellman Ford for IGP: 
+  
+  private Map<String, Map<String, Integer>> _distance = new HashMap<String, Map<String, Integer>>();
+  public Map<String, Map<String, Integer>> getDistance(){
+    return _distance;
+  }
+  // Distance from router r1 to router r2
+  public Integer checkDistance(String r1, String r2) {
+    return _distance.get(r1).get(r2);
+  }
+  
+  private void bellman_ford() {
+//    System.out.println("==========Start compute Bellman Ford=============");
+    Map<String, List<GraphEdge> > edges = _graph.getEdgeMap();
+    Set<String> routers = _graph.getRouters();
+    
+    Map<String, Integer> bf_edges = new HashMap<String, Integer>();
+    // compute shortest path for each router
+    for (String router : routers) {
+      Map<String, Integer> tmp = new HashMap<String, Integer>();
+//      distance.put(router, tmp);
+      tmp.put(router, 0);
+      
+      List<GraphEdge> edges_router = edges.get(router);
+      for (GraphEdge e: edges_router) {
+        if (!e.isAbstract()) {
+//          System.out.println("Graph edge:" + e.toString() +
+ //             " cost:" + e.getStart().getOspfCost() + "|" + e.getStart().getSpeed());
+          Integer cost = e.getStart().getOspfCost();
+          bf_edges.put(e.getRouter() + "_" + e.getPeer(),  cost != null ? cost: 1);
+        }
+      }
+      
+    }
+    
+    for (String router: routers) {
+      _distance.put(router, _bellman_ford(routers, bf_edges, router ));
+    }
+//    System.out.println("==========Finish compute Bellman Ford=============");
+  }
+  // Bellman Ford for single source. 
+  private Map<String, Integer> _bellman_ford(Set<String> allrouters, Map<String, Integer> alledges, String src) {
+    Map<String, Integer> distance = new HashMap<String, Integer>();
+    for (String r: allrouters) {
+      distance.put(r,Integer.MAX_VALUE);
+    }
+    distance.put(src, 0);
+    
+    for (int i = 0; i < allrouters.size() - 1; i++) {
+      for (String edge : alledges.keySet()) {
+        String [] uv = edge.split("_");
+        String u = uv[0];
+        String v = uv[1];
+        if (distance.get(u) + alledges.get(edge) < distance.get(v)) {
+          distance.put(v, distance.get(u) + alledges.get(edge));
+        }
+      }
+    }
+    
+    for (String edge: alledges.keySet()) {
+      String [] uv = edge.split("_");
+      String u = uv[0];
+      String v = uv[1];
+      if (distance.get(u) + alledges.get(edge) < distance.get(v)) {
+        System.out.println("Graph with negative-weight cycle!!!!!!!!!!!!!");
+      }
+    }
+    
+    return distance;
+  }
+  
 
   /*
    * Initialize symbolic variables to represent link failures.
@@ -235,8 +310,8 @@ public class Encoder {
     } else {
       _slices.put(MAIN_SLICE_NAME, new EncoderSlice(this, h, g, MAIN_SLICE_NAME));
     }
-
-    if (_modelIgp) {
+    // xshao do not use SMT to model IGP
+    if (_modelIgp & false) {
       SortedSet<MsPair<String, Ip>> ibgpRouters = new TreeSet<>();
 
       for (Entry<GraphEdge, BgpActivePeerConfig> entry : g.getIbgpNeighbors().entrySet()) {

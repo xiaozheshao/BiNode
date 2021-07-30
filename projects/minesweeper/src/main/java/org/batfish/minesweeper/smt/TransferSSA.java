@@ -746,9 +746,12 @@ class TransferSSA {
 
       // Case where it is a non client, we lookup the next-hop
       if (isNonClient) {
-        EncoderSlice s = _enc.getEncoder().getSlice(peer);
-        SymbolicRoute r = s.getSymbolicDecisions().getBestNeighbor().get(router);
-        igpMet = _enc.mkEq(_current.getIgpMetric(), r.getMetric());
+//        EncoderSlice s = _enc.getEncoder().getSlice(peer);
+//        SymbolicRoute r = s.getSymbolicDecisions().getBestNeighbor().get(router);
+//        igpMet = _enc.mkEq(_current.getIgpMetric(), r.getMetric());
+        ArithExpr cost = _enc.mkInt( _enc.getEncoder().checkDistance(router, peer));
+        igpMet = _enc.mkEq(_current.getIgpMetric(), cost);
+        
       }
 
       // Case where it is a client, next-hop depends on the clientId tag we added
@@ -758,9 +761,11 @@ class TransferSSA {
           String r = entry.getKey();
           Integer clientId = entry.getValue();
           if (!r.equals(router)) {
-            EncoderSlice s = _enc.getEncoder().getSlice(r);
-            SymbolicRoute record = s.getSymbolicDecisions().getBestNeighbor().get(r);
-            BoolExpr eq = _enc.mkEq(_current.getIgpMetric(), record.getMetric());
+            //EncoderSlice s = _enc.getEncoder().getSlice(r);
+            //SymbolicRoute record = s.getSymbolicDecisions().getBestNeighbor().get(r);
+            //BoolExpr eq = _enc.mkEq(_current.getIgpMetric(), record.getMetric());
+            ArithExpr cost = _enc.mkInt( _enc.getEncoder().checkDistance(router, peer));
+            BoolExpr eq = _enc.mkEq(_current.getIgpMetric(), cost);
             acc =
                 _enc.mkAnd(
                     acc, _enc.mkImplies(p.getData().getClientId().checkIfValue(clientId), eq));

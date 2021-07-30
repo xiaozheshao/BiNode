@@ -1848,7 +1848,7 @@ class EncoderSlice {
           // out the current edge ge, the we use ge.
           for (GraphEdge ge2 : getGraph().getEdgeMap().get(router)) {
             // xshao consider whether model IGP
-            if (ge2.isAbstract() && _encoder.getModelIgp()) {
+            if (ge2.isAbstract() && _encoder.getModelIgp() && false) {
               BoolExpr ctrlFwd = getSymbolicDecisions().getControlForwarding().get(router, ge2);
               Graph.BgpSendType st = getGraph().peerType(ge2);
               // If Route reflectors, then next hop based on ID
