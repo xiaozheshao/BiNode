@@ -1,8 +1,8 @@
 
 
-## What is BiNode?
+## What is Policy-explicit network verifier?
 
-BiNode is a network configuration tool that exploits the policy-explicit models to find bugs and guarantee the correctness of (planned or current) network configurations. BiNode is built upon Batfish.
+Policy-explicit network verifier is a network configuration tool that exploits the policy-explicit models to find bugs and guarantee the correctness of (planned or current) network configurations. It is built upon Batfish.
 
 
 ## What is Batfish?
